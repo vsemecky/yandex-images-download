@@ -231,11 +231,11 @@ class YandexImagesDownloader():
     def get_response(self):
         current_url = self.driver.current_url
         if self.similar_images:
-            current_url = current_url.split("&cbir_id=")[0]
+            current_url = "https://yandex.ru/images/search?"
 
-        pathes = [request.path for request in self.driver.requests]
-        request = self.driver.requests[pathes.index(current_url)]
-        return request.response
+        for request in self.driver.requests:
+            if str(request).startswith(current_url):
+                return request.response
 
     def init_url_params(self):
         params = {
