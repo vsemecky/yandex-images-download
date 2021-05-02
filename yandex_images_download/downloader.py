@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 import json
 import logging
@@ -105,12 +106,14 @@ def filepath_fix_existing(directory_path: pathlib.Path, name: str,
 
 def download_single_image(img_url: str,
                           output_directory: pathlib.Path,
-                          sub_directory: str = "",
-                          multiproccess=False) -> ImgUrlResult:
+                          sub_directory: str = "") -> ImgUrlResult:
     img_url_result = ImgUrlResult(status=None,
                                   message=None,
                                   img_url=img_url,
                                   img_path=None)
+
+    # Generate unique hash (SHA224 of img_url)
+    img_hash = hashlib.sha224(img_url.encode()).hexdigest()
 
     img_extensions = (".jpg", ".jpeg", ".jfif", "jpe", ".gif", ".png", ".bmp",
                       ".svg", ".webp", ".ico")
@@ -130,21 +133,15 @@ def download_single_image(img_url: str,
 
         if response.ok:
 
-            img_name = pathlib.Path(urlparse(img_url).path).name
-            img_name = img_name[:YandexImagesDownloader.MAXIMUM_FILENAME_LENGTH]
-
             directory_path = output_directory / sub_directory
             directory_path.mkdir(parents=True, exist_ok=True)
 
-            if multiproccess:
-                img_name = f"[{os.getpid()}] {img_name}"
-
-            img_path = directory_path / img_name
+            img_path = directory_path / img_hash
             if not any(img_path.name.endswith(ext) for ext in img_extensions):
                 img_path = img_path.with_suffix(
                     content_type_to_ext[content_type])
 
-            img_path = filepath_fix_existing(directory_path, img_name, img_path)
+            img_path = filepath_fix_existing(directory_path, img_hash, img_path)
             with open(img_path, "wb") as f:
                 f.write(data)
 
@@ -308,7 +305,7 @@ class YandexImagesDownloader():
             if self.pool:
                 img_url_result = self.pool.apply_async(
                     download_single_image,
-                    args=(img_url, self.output_directory, sub_directory, True))
+                    args=(img_url, self.output_directory, sub_directory))
             else:
                 img_url_result = download_single_image(img_url,
                                                        self.output_directory,
