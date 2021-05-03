@@ -3,6 +3,7 @@ import itertools
 import json
 import logging
 import os
+import glob
 import pathlib
 import re
 import requests
@@ -115,6 +116,19 @@ def download_single_image(img_url: str,
     # Generate unique hash (SHA224 of img_url)
     img_hash = hashlib.sha224(img_url.encode()).hexdigest()
 
+    directory_path = output_directory / sub_directory
+    directory_path.mkdir(parents=True, exist_ok=True)
+    img_path = directory_path / img_hash
+
+    # Skip downloading if image already exist
+    glob_path = f"{directory_path}/{img_hash}.*"
+    if glob.glob(glob_path):
+        img_url_result.status = "skip"
+        img_url_result.message = "Image already exists"
+        img_url_result.img_path = glob_path
+        logging.info(f"    skip: {img_url} - {img_url_result.message}")
+        return img_url_result
+
     img_extensions = (".jpg", ".jpeg", ".jfif", "jpe", ".gif", ".png", ".bmp",
                       ".svg", ".webp", ".ico")
     content_type_to_ext = {
@@ -133,15 +147,10 @@ def download_single_image(img_url: str,
 
         if response.ok:
 
-            directory_path = output_directory / sub_directory
-            directory_path.mkdir(parents=True, exist_ok=True)
-
-            img_path = directory_path / img_hash
             if not any(img_path.name.endswith(ext) for ext in img_extensions):
                 img_path = img_path.with_suffix(
                     content_type_to_ext[content_type])
 
-            img_path = filepath_fix_existing(directory_path, img_hash, img_path)
             with open(img_path, "wb") as f:
                 f.write(data)
 
