@@ -414,7 +414,7 @@ class YandexImagesDownloader():
 
         return keyword_result
 
-    def download_images(self, keywords: List[str]) -> DownloaderResult:
+    def download_images(self, keywords: List[str], single_output_dir=False) -> DownloaderResult:
         dowloader_result = DownloaderResult(status=None,
                                             message=None,
                                             keyword_results=[])
@@ -424,7 +424,9 @@ class YandexImagesDownloader():
         for keyword in keywords:
             logging.info(f"Downloading images for {keyword}...")
 
-            if self.similar_images:
+            if single_output_dir:
+                sub_directory = ""
+            elif self.similar_images:
                 sub_directory = md5(keyword.encode("utf-8")).hexdigest()
             else:
                 sub_directory = keyword

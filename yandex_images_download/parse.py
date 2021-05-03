@@ -56,6 +56,12 @@ def parse_args():
                         type=str,
                         default="downloads")
 
+    parser.add_argument("-1",
+                        "--single-output-dir",
+                        default=False,
+                        help="Download all images directly into output directory, not to subdirs.",
+                        action="store_true")
+
     parser.add_argument("-l",
                         "--limit",
                         help="delimited list input. default: 100",
