@@ -288,23 +288,29 @@ class YandexImagesDownloader():
 
         response = self.get_response()
 
-        if not (response.reason == "OK"):
+        if not response or not (response.reason == "OK"):
             page_result.status = "fail"
             page_result.message = (f"Page response is not ok."
                                    f" page: {page},",
-                                   f" status_code: {response.status_code}.")
+                                   f" status_code: {response.status_code if response else '???'}.")
             page_result.errors_count = YandexImagesDownloader.MAXIMUM_IMAGES_PER_PAGE
             return page_result
 
         soup_page = BeautifulSoup(self.driver.page_source, "lxml")
 
-        # Getting all image urls from page.
-        tag_sepr_item = soup_page.find_all("div", class_="serp-item")
-        serp_items = [
-            json.loads(item.attrs["data-bem"])["serp-item"]
-            for item in tag_sepr_item
-        ]
-        img_hrefs = [key["img_href"] for key in serp_items]
+        # Getting all image urls from page
+        try:
+            tag_sepr_item = soup_page.find_all("div", class_="serp-item")
+            serp_items = [
+                json.loads(item.attrs["data-bem"])["serp-item"]
+                for item in tag_sepr_item
+            ]
+            img_hrefs = [key["img_href"] for key in serp_items]
+        except Exception as e:
+            page_result.status = "fail"
+            page_result.message = str(e)
+            page_result.errors_count = YandexImagesDownloader.MAXIMUM_IMAGES_PER_PAGE
+            return page_result
 
         errors_count = 0
         for img_url in img_hrefs:
@@ -359,13 +365,13 @@ class YandexImagesDownloader():
                                    params=params)
         response = self.get_response()
 
-        if not (response.reason == "OK"):
+        if not response or not (response.reason == "OK"):
             keyword_result = "fail"
             keyword_result.message = (
                 "Failed to fetch a search page."
                 f" url: {YandexImagesDownloader.MAIN_URL},"
                 f" params: {params},"
-                f" status_code: {response.status_code}")
+                f" status_code: {response.status_code if response else '???'}")
             return keyword_result
 
         soup = BeautifulSoup(self.driver.page_source, "lxml")
