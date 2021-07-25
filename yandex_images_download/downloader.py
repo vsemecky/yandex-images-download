@@ -19,6 +19,7 @@ from seleniumwire import webdriver
 from typing import List, Union, Optional
 from urllib.parse import urlparse, urlencode
 from urllib3.exceptions import SSLError, NewConnectionError
+from slugify import slugify
 
 Driver = Union[webdriver.Chrome, webdriver.Edge, 
                webdriver.Firefox, webdriver.Safari]
@@ -412,10 +413,12 @@ class YandexImagesDownloader():
 
             logging.info(f"  Scrapping page {page+1}/{actual_last_page}...")
 
-            page_result = self.download_images_by_page(keyword, page,
-                                                       imgs_count,
-                                                       sub_directory)
+            page_result = self.download_images_by_page(keyword, page, imgs_count, sub_directory)
             keyword_result.page_results.append(page_result)
+            page_result_urls_count = len(page_result.img_url_results)
+            if page_result_urls_count <= 0:
+                logging.info("    Last page found (0 results)")
+                break
 
             imgs_count += len(page_result.img_url_results)
             errors_count += page_result.errors_count
@@ -441,7 +444,7 @@ class YandexImagesDownloader():
             if single_output_dir:
                 sub_directory = ""
             elif self.similar_images:
-                sub_directory = md5(keyword.encode("utf-8")).hexdigest()
+                sub_directory = slugify(keyword)
             else:
                 sub_directory = keyword
 
