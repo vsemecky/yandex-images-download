@@ -89,6 +89,9 @@ def save_json(args, downloader_result: DownloaderResult):
 
 #####
 
+# Log of successfully downloaded image urls
+downloaded_log = {}
+
 
 def filepath_fix_existing(directory_path: pathlib.Path, name: str,
                           filepath: pathlib.Path) -> pathlib.Path:
@@ -157,6 +160,11 @@ def download_single_image(img_url: str,
             img_url_result.status = "success"
             img_url_result.message = "Downloaded the image."
             img_url_result.img_path = str(img_path)
+
+            # Log img_url
+            downloaded_log[img_url] = 1
+
+
         else:
             img_url_result.status = "fail"
             img_url_result.message = (f"img_url response is not ok."
