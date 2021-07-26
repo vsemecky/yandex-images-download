@@ -36,7 +36,19 @@ def get_driver(name: str, path: Optional[str]) -> Driver:
     driver_class = DRIVER_NAME_TO_CLASS[name]
     args = {'executable_path': path} if path else {}
 
-    return driver_class(**args)
+    # Chrome only
+    # if name == "Chrome":
+    #     chrome_options = webdriver.ChromeOptions()
+    #     chrome_options.add_argument("user-data-dir='/home/vojta/.config/google-chrome/Profile 1'")  # Path to your chrome profile
+    #     driver = driver_class(**args, chrome_options=chrome_options)
+
+    driver = driver_class(**args)
+
+    # Time to authorize
+    driver.get(YandexImagesDownloader.MAIN_URL)
+    time.sleep(10)
+
+    return driver
 
 
 #####
@@ -246,7 +258,7 @@ class YandexImagesDownloader():
     def get_response(self):
         current_url = self.driver.current_url
         if self.similar_images:
-            current_url = "https://yandex.ru/images/search?"
+            current_url = self.MAIN_URL + "?"
 
         for request in self.driver.requests:
             if str(request).startswith(current_url):
@@ -438,8 +450,11 @@ class YandexImagesDownloader():
 
         dowloader_result.status = "fail"
 
+        keywords_counter = 0
+        keywords_count = len(keywords)
         for keyword in keywords:
-            logging.info(f"Downloading images for {keyword}...")
+            keywords_counter += 1
+            logging.info(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
             if single_output_dir:
                 sub_directory = ""
