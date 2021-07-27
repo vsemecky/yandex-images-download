@@ -9,7 +9,6 @@ import re
 import requests
 import sys
 import time
-
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
@@ -89,12 +88,9 @@ class DownloaderResult:
     keyword_results: List[KeywordResult]
 
 
-def save_json(args, downloader_result: DownloaderResult):
+def save_json(json_path, downloader_result: DownloaderResult):
     downloader_result_json = downloader_result.to_dict()  # pylint: disable=no-member
-    json_path = pathlib.Path(args.output_directory) / pathlib.Path(args.json)
-    pretty_json = json.dumps(downloader_result_json,
-                             indent=4,
-                             ensure_ascii=False)
+    pretty_json = json.dumps(downloader_result_json, indent=4, ensure_ascii=False)
     with open(json_path, "w", encoding="utf-8") as f:
         f.write(pretty_json)
     logging.info(f"Result information saved: {json_path}.")
@@ -207,7 +203,7 @@ def download_single_image(img_url: str,
 #####
 
 
-class YandexImagesDownloader():
+class YandexImagesDownloader:
     """Class to download images from yandex.ru
     """
 
@@ -444,10 +440,7 @@ class YandexImagesDownloader():
         return keyword_result
 
     def download_images(self, keywords: List[str], single_output_dir=False) -> DownloaderResult:
-        dowloader_result = DownloaderResult(status=None,
-                                            message=None,
-                                            keyword_results=[])
-
+        dowloader_result = DownloaderResult(status=None, message=None, keyword_results=[])
         dowloader_result.status = "fail"
 
         keywords_counter = 0

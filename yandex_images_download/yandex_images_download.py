@@ -1,70 +1,57 @@
+import os
 import time
 import logging
-import pathlib
 import sys
-
 from multiprocessing import Pool
+import yaml
 from .downloader import YandexImagesDownloader, get_driver, download_single_image, save_json
 from .parse import parse_args
 
 
 def scrap(args):
-    keywords = []
+    # Read YAML configuration for the dataset
+    project = yaml.load(open(args.project))
+    # Default values for items missing in project file
+    if 'num_workers' not in project.keys() or project['num_workers'] is None:
+        project['num_workers'] = 4
 
-    if args.keywords:
-        keywords.extend([
-            str(item).strip() for item in args.keywords.split(",") if len(item)
-        ])
-
-    if args.keywords_from_file:
-        with open(args.keywords_from_file, "r") as f:
-            keywords.extend([line.strip() for line in f])
+    keywords = project['images']
 
     driver = get_driver(args.browser, args.driver_path)
 
     try:
-        pool = Pool(args.num_workers) if (args.num_workers) else None
+        pool = Pool(project['num_workers'])
+        output_dir = os.path.dirname(args.project) + "/dataset"
 
-        downloader = YandexImagesDownloader(driver, args.output_directory,
-                                            args.limit, args.isize,
-                                            args.exact_isize, args.iorient,
-                                            args.extension, args.color,
-                                            args.itype, args.commercial,
-                                            args.recent, pool, args.similar_images)
+        downloader = YandexImagesDownloader(
+            driver=driver,
+            output_directory=output_dir,
+            limit=project['limit'],
+            isize=project['isize'],
+            iorient=project['iorient'],
+            extension=project['extension'],
+            pool=pool,
+            similar_images=True)
 
         start_time = time.time()
-        total_errors = 0
-
-        if keywords:
-            downloader_result = downloader.download_images(keywords, single_output_dir=args.single_output_dir)
-            total_errors += sum(
-                keyword_result.errors_count
-                for keyword_result in downloader_result.keyword_results)
+        downloader_result = downloader.download_images(keywords, single_output_dir=project['single_output_dir'])
+        total_errors = sum(keyword_result.errors_count for keyword_result in downloader_result.keyword_results)
     finally:
         driver.quit()
-        if args.num_workers:
-            pool.close()
-            pool.join()
-
-    if args.single_image:
-        img_url_result = download_single_image(
-            args.single_image, pathlib.Path(args.output_directory))
-        total_errors += 1 if img_url_result.status == "fail" else 0
+        pool.close()
+        pool.join()
 
     total_time = time.time() - start_time
 
     logging.info("\nEverything downloaded!")
     logging.info(f"Total errors: {total_errors}")
-    logging.info(
-        f"Total files downloaded: {len(keywords) * args.limit - total_errors}")
+    logging.info(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
     logging.info(f"Total time taken: {total_time} seconds.")
-    if keywords and args.json:
-        save_json(args, downloader_result)
+    save_json(f"{output_dir}/yandex.json", downloader_result)
 
 
-def setup_logging(quiet_mode):
-    logging.basicConfig(level=logging.WARNING if quiet_mode else logging.INFO,
-                        format="%(message)s")
+def setup_logging():
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     selenium_logger = logging.getLogger('seleniumwire')
     selenium_logger.setLevel(logging.WARNING)
 
@@ -72,7 +59,7 @@ def setup_logging(quiet_mode):
 def main():
     try:
         args = parse_args()
-        setup_logging(args.quiet_mode)
+        setup_logging()
         scrap(args)
 
     except KeyboardInterrupt as e:
