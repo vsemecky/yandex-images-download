@@ -35,12 +35,6 @@ def get_driver(name: str, path: Optional[str]) -> Driver:
     driver_class = DRIVER_NAME_TO_CLASS[name]
     args = {'executable_path': path} if path else {}
 
-    # Chrome only
-    # if name == "Chrome":
-    #     chrome_options = webdriver.ChromeOptions()
-    #     chrome_options.add_argument("user-data-dir='/home/vojta/.config/google-chrome/Profile 1'")  # Path to your chrome profile
-    #     driver = driver_class(**args, chrome_options=chrome_options)
-
     driver = driver_class(**args)
 
     # Time to authorize
@@ -204,8 +198,7 @@ def download_single_image(img_url: str,
 
 
 class YandexImagesDownloader:
-    """Class to download images from yandex.ru
-    """
+    """Class to download images from Yandex """
 
     MAIN_URL = "https://yandex.ru/images/search"
     MAXIMUM_PAGES_PER_SEARCH = 50

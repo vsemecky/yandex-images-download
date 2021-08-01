@@ -9,6 +9,8 @@ from .parse import parse_args
 
 
 def scrap(args):
+    output_dir = os.getcwd() + "/dataset"
+
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project))
     # Default values for items missing in project file
@@ -21,7 +23,6 @@ def scrap(args):
 
     try:
         pool = Pool(project['num_workers'])
-        output_dir = os.path.dirname(args.project) + "/dataset"
 
         downloader = YandexImagesDownloader(
             driver=driver,

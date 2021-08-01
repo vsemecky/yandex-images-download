@@ -1,5 +1,4 @@
 import argparse
-import logging
 from .downloader import DRIVER_NAME_TO_CLASS
 
 
