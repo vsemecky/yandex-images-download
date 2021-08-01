@@ -30,11 +30,13 @@ DRIVER_NAME_TO_CLASS = {
 }  # type: Dict[str, Driver]
 
 
-def get_driver(name: str, path: Optional[str]) -> Driver:
-    driver_class = DRIVER_NAME_TO_CLASS[name]
-    args = {'executable_path': path} if path else {}
+def get_driver(name: str = "Chrome") -> Driver:
+    # driver_class = DRIVER_NAME_TO_CLASS[name]
+    # args = {'executable_path': path} if path else {}
+    # driver = driver_class(**args)
+    # driver = driver_class()
 
-    driver = driver_class(**args)
+    driver = DRIVER_NAME_TO_CLASS[name]()
 
     # Time to authorize
     driver.get(YandexImagesDownloader.MAIN_URL)
@@ -188,7 +190,7 @@ def download_single_image(img_url: str,
     if img_url_result.status == "fail":
         print(f"    fail: {img_url} error: {img_url_result.message}")
     else:
-        print.info(f"    {img_url_result.message} ==> {img_path}")
+        print(f"    {img_url_result.message} ==> {img_path}")
 
     return img_url_result
 

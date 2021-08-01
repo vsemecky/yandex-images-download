@@ -1,31 +1,9 @@
 import argparse
-from .downloader import DRIVER_NAME_TO_CLASS
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("browser",
-                        help=("browser with WebDriver"),
-                        type=str,
-                        choices=list(DRIVER_NAME_TO_CLASS))
-
-    parser.add_argument("-dp",
-                        "--driver-path",
-                        help=("path to brower's WebDriver"),
-                        type=str,
-                        default=None)
-
-    parser.add_argument("--project",
-                        help="Project file *.yml",
-                        type=str,
-                        default=None)
-
-    parser.add_argument("--json",
-                        help="save results information to json file",
-                        type=str,
-                        default=True)
-
+    parser.add_argument("project", type=str, help="Project file *.yml")
     args = parser.parse_args()
 
     # Print command-line arguments

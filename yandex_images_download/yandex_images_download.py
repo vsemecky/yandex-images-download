@@ -12,13 +12,16 @@ def scrap(args):
 
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project))
+
     # Default values for items missing in project file
     if 'num_workers' not in project.keys() or project['num_workers'] is None:
         project['num_workers'] = 4
+    if 'browser' not in project.keys() or project['browser'] is None:
+        project['browser'] = "Chrome"
 
     keywords = project['images']
 
-    driver = get_driver(args.browser, args.driver_path)
+    driver = get_driver(project['browser'])
 
     try:
         pool = Pool(project['num_workers'])
@@ -60,7 +63,7 @@ def main():
         sys.exit(1)
 
     except Exception as e:
-        print(e, exc_info=True)
+        print(e)
         sys.exit(1)
 
 
