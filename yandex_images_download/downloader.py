@@ -1,7 +1,6 @@
 import hashlib
 import itertools
 import json
-import logging
 import os
 import glob
 import pathlib
@@ -87,7 +86,7 @@ def save_json(json_path, downloader_result: DownloaderResult):
     pretty_json = json.dumps(downloader_result_json, indent=4, ensure_ascii=False)
     with open(json_path, "w", encoding="utf-8") as f:
         f.write(pretty_json)
-    logging.info(f"Result information saved: {json_path}.")
+    print(f"Result information saved: {json_path}.")
 
 
 #####
@@ -132,7 +131,7 @@ def download_single_image(img_url: str,
         img_url_result.status = "skip"
         img_url_result.message = "Image already exists"
         img_url_result.img_path = glob_path
-        logging.info(f"    skip: {img_url} - {img_url_result.message}")
+        print(f"    skip: {img_url} - {img_url_result.message}")
         return img_url_result
 
     img_extensions = (".jpg", ".jpeg", ".jfif", "jpe", ".gif", ".png", ".bmp",
@@ -187,9 +186,9 @@ def download_single_image(img_url: str,
                                   f" Error: {type(exception), exception}")
 
     if img_url_result.status == "fail":
-        logging.info(f"    fail: {img_url} error: {img_url_result.message}")
+        print(f"    fail: {img_url} error: {img_url_result.message}")
     else:
-        logging.info(f"    {img_url_result.message} ==> {img_path}")
+        print.info(f"    {img_url_result.message} ==> {img_path}")
 
     return img_url_result
 
@@ -241,8 +240,8 @@ class YandexImagesDownloader:
         self.pool = pool
         self.similar_images = similar_images
 
-        logging.info(f'Output directory is set to "{self.output_directory}/"')
-        logging.info(f"Limit of images is set to {self.limit}")
+        print(f'Output directory is set to "{self.output_directory}/"')
+        print(f"Limit of images is set to {self.limit}")
 
     def get_response(self):
         current_url = self.driver.current_url
@@ -392,14 +391,14 @@ class YandexImagesDownloader:
             keyword_result.status = "success"
             keyword_result.message = f"No images with keyword {keyword} found."
             keyword_result.errors_count = 0
-            logging.info(f"    {keyword_result.message}")
+            print(f"    {keyword_result.message}")
             return keyword_result
         serp_list = json.loads(tag_serp_list.attrs["data-bem"])["serp-list"]
         last_page = serp_list["lastPage"]
         actual_last_page = 1 + floor(
             self.limit / YandexImagesDownloader.MAXIMUM_IMAGES_PER_PAGE)
 
-        logging.info(f"  Found {last_page+1} pages of {keyword}.")
+        print(f"  Found {last_page+1} pages of {keyword}.")
 
         # Getting all images.
         imgs_count = 0
@@ -412,13 +411,13 @@ class YandexImagesDownloader:
             if page > actual_last_page:
                 actual_last_page += 1
 
-            logging.info(f"  Scrapping page {page+1}/{actual_last_page}...")
+            print(f"  Scrapping page {page+1}/{actual_last_page}...")
 
             page_result = self.download_images_by_page(keyword, page, imgs_count, sub_directory)
             keyword_result.page_results.append(page_result)
             page_result_urls_count = len(page_result.img_url_results)
             if page_result_urls_count <= 0:
-                logging.info("    Last page found (0 results)")
+                print("    Last page found (0 results)")
                 break
 
             imgs_count += len(page_result.img_url_results)
@@ -440,7 +439,7 @@ class YandexImagesDownloader:
         keywords_count = len(keywords)
         for keyword in keywords:
             keywords_counter += 1
-            logging.info(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
+            print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
             if single_output_dir:
                 sub_directory = ""
@@ -453,7 +452,7 @@ class YandexImagesDownloader:
                 keyword, sub_directory=sub_directory)
             dowloader_result.keyword_results.append(keyword_result)
 
-            logging.info(keyword_result.message)
+            print(keyword_result.message)
 
         dowloader_result.status = "success"
         dowloader_result.message = "Everything is downloaded!"
@@ -478,7 +477,7 @@ class YandexImagesDownloader:
             if not soup.select(".form__captcha"):
                 break
 
-            logging.warning(f"Please, type the captcha in the browser,"
+            print(f"Please, type the captcha in the browser,"
                             " then press Enter or type [q] to exit")
             reply = input()
             if reply == "q":

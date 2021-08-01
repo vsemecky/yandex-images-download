@@ -1,6 +1,5 @@
 import os
 import time
-import logging
 import sys
 from multiprocessing import Pool
 import yaml
@@ -44,31 +43,24 @@ def scrap(args):
 
     total_time = time.time() - start_time
 
-    logging.info("\nEverything downloaded!")
-    logging.info(f"Total errors: {total_errors}")
-    logging.info(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
-    logging.info(f"Total time taken: {total_time} seconds.")
+    print("\nEverything downloaded!")
+    print(f"Total errors: {total_errors}")
+    print(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
+    print(f"Total time taken: {total_time} seconds.")
     save_json(f"{output_dir}/yandex.json", downloader_result)
-
-
-def setup_logging():
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    selenium_logger = logging.getLogger('seleniumwire')
-    selenium_logger.setLevel(logging.WARNING)
 
 
 def main():
     try:
         args = parse_args()
-        setup_logging()
         scrap(args)
 
     except KeyboardInterrupt as e:
-        logging.error("KeyboardInterrupt")
+        print("KeyboardInterrupt")
         sys.exit(1)
 
     except Exception as e:
-        logging.error(e, exc_info=True)
+        print(e, exc_info=True)
         sys.exit(1)
 
 
