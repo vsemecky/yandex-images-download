@@ -8,7 +8,7 @@ from .parse import parse_args
 
 
 def scrap(args):
-    output_dir = os.getcwd() + "/dataset"
+    output_dir = os.getcwd() + "/yandex"
 
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project))
@@ -31,6 +31,8 @@ def scrap(args):
             output_directory=output_dir,
             limit=project['limit'],
             isize=project['isize'],
+            min_width=project['min_width'],
+            min_height=project['min_height'],
             iorient=project['iorient'],
             extension=project['extension'],
             pool=pool,

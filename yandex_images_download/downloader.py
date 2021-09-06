@@ -2,6 +2,7 @@ import hashlib
 import itertools
 import json
 import os
+import io
 import glob
 import pathlib
 import re
@@ -11,11 +12,14 @@ import time
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
+from PIL import Image
 from hashlib import md5
 from math import floor
 from seleniumwire import webdriver
 from typing import List, Union, Optional
 from urllib.parse import urlparse, urlencode
+
+from termcolor import colored
 from urllib3.exceptions import SSLError, NewConnectionError
 from slugify import slugify
 
@@ -53,6 +57,16 @@ class ImgUrlResult:
     message: str
     img_url: str
     img_path: str
+
+    STATUS_COLORS = {
+        'fail': 'red',
+        'success': 'green',
+        'skip': 'yellow',
+    }
+
+    def print(self):
+        status_colored = colored(self.status, self.STATUS_COLORS[self.status])
+        print(f"\t{status_colored}: {self.img_url} - {self.message}")
 
 
 @dataclass_json
@@ -114,7 +128,10 @@ def filepath_fix_existing(directory_path: pathlib.Path, name: str,
 
 def download_single_image(img_url: str,
                           output_directory: pathlib.Path,
-                          sub_directory: str = "") -> ImgUrlResult:
+                          min_width: int,
+                          min_height: int,
+                          sub_directory: str = "",
+                          ) -> ImgUrlResult:
     img_url_result = ImgUrlResult(status=None,
                                   message=None,
                                   img_url=img_url,
@@ -133,11 +150,10 @@ def download_single_image(img_url: str,
         img_url_result.status = "skip"
         img_url_result.message = "Image already exists"
         img_url_result.img_path = glob_path
-        print(f"    skip: {img_url} - {img_url_result.message}")
+        img_url_result.print()
         return img_url_result
 
-    img_extensions = (".jpg", ".jpeg", ".jfif", "jpe", ".gif", ".png", ".bmp",
-                      ".svg", ".webp", ".ico")
+    img_extensions = (".jpg", ".jpeg", ".jfif", "jpe", ".gif", ".png", ".bmp", ".svg", ".webp", ".ico")
     content_type_to_ext = {
         "image/gif": ".gif",
         "image/jpeg": ".jpg",
@@ -149,14 +165,22 @@ def download_single_image(img_url: str,
     try:
         response = requests.get(img_url, timeout=10)
 
-        data = response.content
-        content_type = response.headers["Content-Type"]
-
         if response.ok:
+
+            data = response.content
+            content_type = response.headers["Content-Type"]
 
             if not any(img_path.name.endswith(ext) for ext in img_extensions):
                 img_path = img_path.with_suffix(
                     content_type_to_ext[content_type])
+
+            # Skip saving if image has lower than minimun resolution
+            tmp_pil = Image.open(io.BytesIO(data))
+            if tmp_pil.width < min_width or tmp_pil.height < min_height:
+                img_url_result.status = "small"
+                img_url_result.message = f"Image {tmp_pil.width}x{tmp_pil.height} is less than {min_width}x{min_height}"
+                # print("tmp pil:", tmp_pil.width, "x", tmp_pil.height, "min:", min_width, "x", min_height )
+                return img_url_result
 
             with open(img_path, "wb") as f:
                 f.write(data)
@@ -167,7 +191,6 @@ def download_single_image(img_url: str,
 
             # Log img_url
             downloaded_log[img_url] = 1
-
 
         else:
             img_url_result.status = "fail"
@@ -187,10 +210,13 @@ def download_single_image(img_url: str,
         img_url_result.message = (f"Something is wrong here.",
                                   f" Error: {type(exception), exception}")
 
-    if img_url_result.status == "fail":
-        print(f"    fail: {img_url} error: {img_url_result.message}")
-    else:
-        print(f"    {img_url_result.message} ==> {img_path}")
+    # Print result
+    img_url_result.print()
+    # if img_url_result.status == "fail":
+    #     print(colored("    fail", 'red'), f"{img_url} - {img_url_result.message}")
+    # else:
+    #     print(colored("    fail", 'red'), f"{img_url} - {img_url_result.message}")
+    #     print(f"    {img_url_result.message} ==> {img_path}")
 
     return img_url_result
 
@@ -211,6 +237,8 @@ class YandexImagesDownloader:
                  output_directory="download/",
                  limit=100,
                  isize=None,
+                 min_width=None,
+                 min_height=None,
                  exact_isize=None,
                  iorient=None,
                  extension=None,
@@ -224,6 +252,8 @@ class YandexImagesDownloader:
         self.output_directory = pathlib.Path(output_directory)
         self.limit = limit
         self.isize = isize
+        self.min_width = min_width
+        self.min_height = min_height
         self.exact_isize = exact_isize
         self.iorient = iorient
         self.extension = extension
@@ -331,11 +361,22 @@ class YandexImagesDownloader:
             if self.pool:
                 img_url_result = self.pool.apply_async(
                     download_single_image,
-                    args=(img_url, self.output_directory, sub_directory))
+                    # args=(),
+                    kwds={
+                        'img_url': img_url,
+                        'output_directory': self.output_directory,
+                        'sub_directory': sub_directory,
+                        'min_width': self.min_width,
+                        'min_height': self.min_height
+                    })
             else:
-                img_url_result = download_single_image(img_url,
-                                                       self.output_directory,
-                                                       sub_directory)
+                img_url_result = download_single_image(
+                   img_url,
+                   self.output_directory,
+                   min_width=self.min_width,
+                   min_height=self.min_height,
+                   sub_directory=sub_directory
+                )
 
             page_result.img_url_results.append(img_url_result)
 
@@ -353,8 +394,7 @@ class YandexImagesDownloader:
 
         return page_result
 
-    def download_images_by_keyword(self, keyword,
-                                   sub_directory="") -> KeywordResult:
+    def download_images_by_keyword(self, keyword, sub_directory="", label_prefix="") -> KeywordResult:
         keyword_result = KeywordResult(status=None,
                                        message=None,
                                        keyword=keyword,
@@ -362,12 +402,12 @@ class YandexImagesDownloader:
                                        page_results=[])
 
         if self.similar_images:
-            params={
+            params = {
                "url": keyword,
                "rpt": "imagelike"
             }
         else:
-            params={
+            params = {
                 "text": keyword,
                 "nomisspell": 1
            }
@@ -413,7 +453,8 @@ class YandexImagesDownloader:
             if page > actual_last_page:
                 actual_last_page += 1
 
-            print(f"  Scrapping page {page+1}/{actual_last_page}...")
+            print(f"  [{label_prefix}]: Scrapping page {page+1}/{actual_last_page}...")
+
 
             page_result = self.download_images_by_page(keyword, page, imgs_count, sub_directory)
             keyword_result.page_results.append(page_result)
@@ -451,7 +492,10 @@ class YandexImagesDownloader:
                 sub_directory = keyword
 
             keyword_result = self.download_images_by_keyword(
-                keyword, sub_directory=sub_directory)
+                keyword,
+                sub_directory=sub_directory,
+                label_prefix=f"{keywords_counter}/{keywords_count}"  # Pass counter info for printing progress
+            )
             dowloader_result.keyword_results.append(keyword_result)
 
             print(keyword_result.message)
@@ -479,8 +523,7 @@ class YandexImagesDownloader:
             if not soup.select(".form__captcha"):
                 break
 
-            print(f"Please, type the captcha in the browser,"
-                            " then press Enter or type [q] to exit")
+            print("Please, type the captcha in the browser, then press Enter or type [q] to exit")
             reply = input()
             if reply == "q":
                 raise YandexImagesDownloader.StopCaptchaInput()
