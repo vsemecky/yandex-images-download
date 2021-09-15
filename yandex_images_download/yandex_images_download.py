@@ -1,17 +1,27 @@
+import glob
 import os
 import time
 import sys
 from multiprocessing import Pool
 import yaml
-from .downloader import YandexImagesDownloader, get_driver, download_single_image, save_json
+from .downloader import YandexImagesDownloader, get_driver, save_json
 from .parse import parse_args
 
+# negative_ids_global = []
 
 def scrap(args):
-    output_dir = os.getcwd() + "/yandex"
+    output_dir = os.getcwd() + "/dataset"
+    negative_dir = os.getcwd() + "/negative"
 
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project))
+
+    # Load negative IDs
+    project['negative'] = []
+    negative_files = glob.glob(negative_dir + '/*.*')
+    for negative_file in negative_files:
+        project['negative'].append(os.path.basename(os.path.splitext(negative_file)[0]))
+    print("Negative count:", len(project['negative']))
 
     # Default values for items missing in project file
     if 'num_workers' not in project.keys() or project['num_workers'] is None:
@@ -36,7 +46,8 @@ def scrap(args):
             iorient=project['iorient'],
             extension=project['extension'],
             pool=pool,
-            similar_images=True)
+            similar_images=True,
+            negative=project['negative'])
 
         start_time = time.time()
         downloader_result = downloader.download_images(keywords, single_output_dir=project['single_output_dir'])

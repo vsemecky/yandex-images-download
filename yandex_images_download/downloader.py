@@ -61,7 +61,10 @@ class ImgUrlResult:
     STATUS_COLORS = {
         'fail': 'red',
         'success': 'green',
-        'skip': 'yellow',
+        'ok': 'green',
+        'skip': 'yellow',  # old synonymum for exist
+        'exist': 'yellow',
+        'negative': 'cyan',
     }
 
     def print(self):
@@ -109,6 +112,7 @@ def save_json(json_path, downloader_result: DownloaderResult):
 
 # Log of successfully downloaded image urls
 downloaded_log = {}
+# negative_ids = []  # used as global variable
 
 
 def filepath_fix_existing(directory_path: pathlib.Path, name: str,
@@ -131,11 +135,10 @@ def download_single_image(img_url: str,
                           min_width: int,
                           min_height: int,
                           sub_directory: str = "",
+                          negative_ids=[]
                           ) -> ImgUrlResult:
-    img_url_result = ImgUrlResult(status=None,
-                                  message=None,
-                                  img_url=img_url,
-                                  img_path=None)
+
+    img_url_result = ImgUrlResult(status=None, message=None, img_url=img_url, img_path=None)
 
     # Generate unique hash (SHA224 of img_url)
     img_hash = hashlib.sha224(img_url.encode()).hexdigest()
@@ -144,10 +147,18 @@ def download_single_image(img_url: str,
     directory_path.mkdir(parents=True, exist_ok=True)
     img_path = directory_path / img_hash
 
+    # Skip downloading if image `id` is in negative
+    print(img_hash, len(negative_ids))
+    if img_hash in negative_ids:
+        img_url_result.status = "negative"
+        img_url_result.message = ""
+        img_url_result.print()
+        return img_url_result
+
     # Skip downloading if image already exist
     glob_path = f"{directory_path}/{img_hash}.*"
     if glob.glob(glob_path):
-        img_url_result.status = "skip"
+        img_url_result.status = "exist"
         img_url_result.message = "Image already exists"
         img_url_result.img_path = glob_path
         img_url_result.print()
@@ -247,7 +258,12 @@ class YandexImagesDownloader:
                  commercial=None,
                  recent=None,
                  pool=None,
-                 similar_images=False):
+                 similar_images=False,
+                 negative=[]):
+
+        # global negative_ids
+        # negative_ids = negative  # Set global variable
+
         self.driver = driver
         self.output_directory = pathlib.Path(output_directory)
         self.limit = limit
@@ -271,6 +287,7 @@ class YandexImagesDownloader:
         self.cookies = {}
         self.pool = pool
         self.similar_images = similar_images
+        self.negative = negative  # List of negative image ids (hashes)
 
         print(f'Output directory is set to "{self.output_directory}/"')
         print(f"Limit of images is set to {self.limit}")
@@ -338,7 +355,6 @@ class YandexImagesDownloader:
             return page_result
 
         soup_page = BeautifulSoup(self.driver.page_source, "lxml")
-
         # Getting all image urls from page
         try:
             tag_sepr_item = soup_page.find_all("div", class_="serp-item")
@@ -367,7 +383,8 @@ class YandexImagesDownloader:
                         'output_directory': self.output_directory,
                         'sub_directory': sub_directory,
                         'min_width': self.min_width,
-                        'min_height': self.min_height
+                        'min_height': self.min_height,
+                        'negative_ids': self.negative,
                     })
             else:
                 img_url_result = download_single_image(
@@ -454,7 +471,6 @@ class YandexImagesDownloader:
                 actual_last_page += 1
 
             print(f"  [{label_prefix}]: Scrapping page {page+1}/{actual_last_page}...")
-
 
             page_result = self.download_images_by_page(keyword, page, imgs_count, sub_directory)
             keyword_result.page_results.append(page_result)
