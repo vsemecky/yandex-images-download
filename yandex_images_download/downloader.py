@@ -148,7 +148,6 @@ def download_single_image(img_url: str,
     img_path = directory_path / img_hash
 
     # Skip downloading if image `id` is in negative
-    print(img_hash, len(negative_ids))
     if img_hash in negative_ids:
         img_url_result.status = "negative"
         img_url_result.message = ""
@@ -183,7 +182,8 @@ def download_single_image(img_url: str,
 
             if not any(img_path.name.endswith(ext) for ext in img_extensions):
                 img_path = img_path.with_suffix(
-                    content_type_to_ext[content_type])
+                    content_type_to_ext[content_type]
+                )
 
             # Skip saving if image has lower than minimun resolution
             tmp_pil = Image.open(io.BytesIO(data))
@@ -470,7 +470,7 @@ class YandexImagesDownloader:
             if page > actual_last_page:
                 actual_last_page += 1
 
-            print(f"  [{label_prefix}]: Scrapping page {page+1}/{actual_last_page}...")
+            print(f"\n  [{label_prefix}]: Scrapping page {page+1}/{actual_last_page} {keyword}")
 
             page_result = self.download_images_by_page(keyword, page, imgs_count, sub_directory)
             keyword_result.page_results.append(page_result)
