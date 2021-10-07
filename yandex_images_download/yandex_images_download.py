@@ -3,21 +3,22 @@ import os
 import time
 import sys
 from multiprocessing import Pool
+from pprint import pprint
+
 import yaml
 from .downloader import YandexImagesDownloader, get_driver, save_json
 from .parse import parse_args
 
-# negative_ids_global = []
 
 def scrap(args):
     output_dir = os.getcwd() + "/dataset"
     negative_dir = os.getcwd() + "/negative"
 
     # Read YAML configuration for the dataset
-    project = yaml.load(open(args.project))
+    project = yaml.load(open(args.project), Loader=yaml.FullLoader)
 
-    # Load negative IDs
-    project['negative'] = []
+    # Load negative IDs, @todo Implementovat načítání URL z configu
+    project['negative'] = []  # stačí tohle disablovat a zůstanou tam url z configu
     negative_files = glob.glob(negative_dir + '/*.*')
     for negative_file in negative_files:
         project['negative'].append(os.path.basename(os.path.splitext(negative_file)[0]))
@@ -29,8 +30,19 @@ def scrap(args):
     if 'browser' not in project.keys() or project['browser'] is None:
         project['browser'] = "Chrome"
 
-    keywords = project['images']
+    # Keywords or URLs?
+    if 'keywords' in project and 'urls' in project:
+        raise Exception('Config error', "Use either 'keywords' or 'urls', not both!")
+    elif 'keywords' in project:
+        keywords = project['keywords']
+        similar_images = False
+    elif 'urls' in project:
+        keywords = project['urls']
+        similar_images = True
+    else:
+        raise Exception('Config error', "Either 'keywords' or 'urls' should be specified in config!")
 
+    # Driver
     driver = get_driver(project['browser'])
 
     try:
@@ -46,7 +58,7 @@ def scrap(args):
             iorient=project['iorient'],
             extension=project['extension'],
             pool=pool,
-            similar_images=True,
+            similar_images=similar_images,
             negative=project['negative'])
 
         start_time = time.time()
@@ -63,7 +75,7 @@ def scrap(args):
     print(f"Total errors: {total_errors}")
     print(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
     print(f"Total time taken: {total_time} seconds.")
-    save_json(f"{output_dir}/yandex.json", downloader_result)
+    save_json(f"{output_dir}/../yandex.json", downloader_result)
 
 
 def main():
