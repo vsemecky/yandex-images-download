@@ -9,6 +9,8 @@ import yaml
 from .downloader import YandexImagesDownloader, get_driver, save_json
 from .parse import parse_args
 
+threads = 32
+
 
 def scrap(args):
     output_dir = os.getcwd() + "/dataset"
@@ -25,8 +27,6 @@ def scrap(args):
     print("Negative count:", len(project['negative']))
 
     # Default values for items missing in project file
-    if 'num_workers' not in project.keys() or project['num_workers'] is None:
-        project['num_workers'] = 4
     if 'browser' not in project.keys() or project['browser'] is None:
         project['browser'] = "Chrome"
 
@@ -40,13 +40,13 @@ def scrap(args):
         keywords = project['urls']
         similar_images = True
     else:
-        raise Exception('Config error', "Either 'keywords' or 'urls' should be specified in config!")
+        raise Exception('Config error', "Either 'keywords' or 'urls' should be specified in the config!")
 
     # Driver
     driver = get_driver(project['browser'])
 
     try:
-        pool = Pool(project['num_workers'])
+        pool = Pool(processes=threads)
 
         downloader = YandexImagesDownloader(
             driver=driver,
