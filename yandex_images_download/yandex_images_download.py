@@ -3,13 +3,14 @@ import os
 import time
 import sys
 from multiprocessing import Pool
-from pprint import pprint
-
+import traceback
 import yaml
+from termcolor import colored
+
 from .downloader import YandexImagesDownloader, get_driver, save_json
 from .parse import parse_args
 
-threads = 32
+threads = 32  # Number of threads for downloading (not scraping)
 
 
 def scrap(args):
@@ -80,19 +81,16 @@ def scrap(args):
     print(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
     print(f"Total time taken: {total_time} seconds.")
     save_json(f"{output_dir}/../yandex.json", downloader_result)
+    # @todo Tady to zapsat znova a tentokrát do turbo.txt souboru a jenom URL, která se úspěšně povedla (nebo jsou EXIST), ale ne faily, a ne negative.
 
 
 def main():
     try:
         args = parse_args()
         scrap(args)
-
-    except KeyboardInterrupt as e:
-        print("KeyboardInterrupt")
-        sys.exit(1)
-
     except Exception as e:
-        print(e)
+        print(colored(e, 'red'))
+        print(colored(traceback.format_exc(), 'yellow'))
         sys.exit(1)
 
 

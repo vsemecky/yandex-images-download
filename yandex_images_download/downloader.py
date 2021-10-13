@@ -44,7 +44,7 @@ def get_driver(name: str = "Chrome") -> Driver:
 
     # Time to authorize
     driver.get(YandexImagesDownloader.MAIN_URL)
-    time.sleep(10)
+    time.sleep(8)
 
     return driver
 
@@ -332,8 +332,7 @@ class YandexImagesDownloader:
 
         return params
 
-    def download_images_by_page(self, keyword, page, imgs_count,
-                                sub_directory) -> PageResult:
+    def download_images_by_page(self, keyword, page, imgs_count, sub_directory) -> PageResult:
 
         page_result = PageResult(status=None,
                                  message=None,
@@ -412,11 +411,7 @@ class YandexImagesDownloader:
         return page_result
 
     def download_images_by_keyword(self, keyword, sub_directory="", label_prefix="") -> KeywordResult:
-        keyword_result = KeywordResult(status=None,
-                                       message=None,
-                                       keyword=keyword,
-                                       errors_count=None,
-                                       page_results=[])
+        keyword_result = KeywordResult(status=None, message=None, keyword=keyword, errors_count=None, page_results=[])
 
         if self.similar_images:
             params = {
@@ -429,8 +424,7 @@ class YandexImagesDownloader:
                 "nomisspell": 1
            }
 
-        self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL,
-                                   params=params)
+        self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL, params=params)
         response = self.get_response()
 
         if not response or not (response.reason == "OK"):
@@ -512,13 +506,6 @@ class YandexImagesDownloader:
                 continue
 
             print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
-
-            if single_output_dir:
-                sub_directory = ""
-            elif self.similar_images:
-                sub_directory = slugify(keyword)
-            else:
-                sub_directory = keyword
 
             keyword_result = self.download_images_by_keyword(
                 keyword,
