@@ -498,6 +498,19 @@ class YandexImagesDownloader:
         keywords_count = len(keywords)
         for keyword in keywords:
             keywords_counter += 1
+
+            if single_output_dir:
+                sub_directory = ""
+            elif self.similar_images:
+                sub_directory = slugify(keyword)
+            else:
+                sub_directory = keyword
+
+            # Skip if subdirectory (url) is too long
+            if len(sub_directory) > 255:
+                print(f"Sub-directory too long: {colored(sub_directory, 'cyan')}")
+                continue
+
             print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
             if single_output_dir:
