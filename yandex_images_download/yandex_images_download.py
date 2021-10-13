@@ -19,12 +19,16 @@ def scrap(args):
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project), Loader=yaml.FullLoader)
 
-    # Load negative IDs, @todo Implementovat načítání URL z configu
-    project['negative'] = []  # stačí tohle disablovat a zůstanou tam url z configu
+    if 'negative' not in project or type(project['negative']) is not list:
+        project['negative'] = []
+
+    print("Negative IDs:", len(project['negative']))
     negative_files = glob.glob(negative_dir + '/*.*')
     for negative_file in negative_files:
         project['negative'].append(os.path.basename(os.path.splitext(negative_file)[0]))
-    print("Negative count:", len(project['negative']))
+    project['negative'] = list(set(project['negative']))  # Dedupe negatives
+    print("Negative files:", len(negative_files))
+    print("Negative ALL:", len(project['negative']))
 
     # Default values for items missing in project file
     if 'browser' not in project.keys() or project['browser'] is None:
