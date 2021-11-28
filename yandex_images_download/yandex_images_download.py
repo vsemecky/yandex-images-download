@@ -68,7 +68,9 @@ def scrap(args):
 
         start_time = time.time()
         downloader_result = downloader.download_images(keywords, single_output_dir=project['single_output_dir'])
-        total_errors = sum(keyword_result.errors_count for keyword_result in downloader_result.keyword_results)
+        # total_errors = sum(keyword_result.errors_count for keyword_result in downloader_result.keyword_results)
+        # fix:
+        total_errors = sum(result.errors_count for result in downloader_result.keyword_results if result.errors_count is not None)
     finally:
         driver.quit()
         pool.close()

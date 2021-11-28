@@ -507,12 +507,15 @@ class YandexImagesDownloader:
 
             print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
-            keyword_result = self.download_images_by_keyword(
-                keyword,
-                sub_directory=sub_directory,
-                label_prefix=f"{keywords_counter}/{keywords_count}"  # Pass counter info for printing progress
-            )
-            dowloader_result.keyword_results.append(keyword_result)
+            try:
+                keyword_result = self.download_images_by_keyword(
+                    keyword,
+                    sub_directory=sub_directory,
+                    label_prefix=f"{keywords_counter}/{keywords_count}"  # Pass counter info for printing progress
+                )
+                dowloader_result.keyword_results.append(keyword_result)
+            except:
+                continue
 
             print(keyword_result.message)
 
