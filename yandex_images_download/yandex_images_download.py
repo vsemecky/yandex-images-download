@@ -1,9 +1,12 @@
 import glob
 import os
+import re
 import time
 import sys
 from multiprocessing import Pool
 import traceback
+from pprint import pprint
+
 import yaml
 from termcolor import colored
 
@@ -14,8 +17,8 @@ threads = 32  # Number of threads for downloading (not scraping)
 
 
 def scrap(args):
-    output_dir = os.getcwd() + "/dataset"
-    negative_dir = os.getcwd() + "/negative"
+    output_dir = os.getcwd() + "/" + os.path.splitext(args.project)[0] + "/dataset"
+    print(f"Output dir: '{output_dir}'")
 
     # Read YAML configuration for the dataset
     project = yaml.load(open(args.project), Loader=yaml.FullLoader)
@@ -23,13 +26,20 @@ def scrap(args):
     if 'negative' not in project or type(project['negative']) is not list:
         project['negative'] = []
 
-    print("Negative IDs:", len(project['negative']))
-    negative_files = glob.glob(negative_dir + '/*.*')
-    for negative_file in negative_files:
-        project['negative'].append(os.path.basename(os.path.splitext(negative_file)[0]))
-    project['negative'] = list(set(project['negative']))  # Dedupe negatives
-    print("Negative files:", len(negative_files))
-    print("Negative ALL:", len(project['negative']))
+    print("Project: negative IDs:", len(project['negative']))
+
+    # negative_files = glob.glob(os.getcwd() + '/*.*')
+    for negative_file in glob.glob(os.getcwd() + '/**/*.*', recursive=True):
+        slug = os.path.basename(os.path.splitext(negative_file)[0])
+        if re.match('^[a-z0-9]{56}$', slug):
+            # print(slug, "OK")
+            project['negative'].append(slug)
+
+    # Dedupe negatives
+    project['negative'] = list(set(project['negative']))
+
+    print("Existing files:", len(project['negative']))
+    # pprint(project['negative'])
 
     # Default values for items missing in project file
     if 'browser' not in project.keys() or project['browser'] is None:

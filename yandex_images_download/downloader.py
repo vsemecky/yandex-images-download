@@ -42,9 +42,21 @@ def get_driver(name: str = "Chrome") -> Driver:
 
     driver = DRIVER_NAME_TO_CLASS[name]()
 
-    # Time to authorize
     driver.get(YandexImagesDownloader.MAIN_URL)
-    time.sleep(8)
+
+    # Odkliknout "Accept"
+    els = driver.find_elements_by_css_selector("button.sc-pNWxx.sc-jrsJCI.dryRrI.emsrNO")
+    # els = driver.find_elements_by_css_selector("button.emsrNO")
+    for el in els:
+        print("Element Accept", el.text)
+        el.click()
+
+    # Rozbalit combo security level
+    el_combo = driver.find_element_by_css_selector("button.button2.button2_theme_clear.button2_size_s.button2_view_classic.dropdown-menu__switcher.i-bem.button2_js_inited")
+    el_combo.click()
+    # Zvolit "Unsecure" (prvni varianta)
+    el_security_levels = driver.find_elements_by_css_selector("a.link.link_theme_normal.b-menu-vert__text.head-filter__item.i-bem")
+    el_security_levels[0].click()
 
     return driver
 
