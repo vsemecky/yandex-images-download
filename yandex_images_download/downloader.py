@@ -23,8 +23,7 @@ from termcolor import colored
 from urllib3.exceptions import SSLError, NewConnectionError
 from slugify import slugify
 
-Driver = Union[webdriver.Chrome, webdriver.Edge, 
-               webdriver.Firefox, webdriver.Safari]
+Driver = Union[webdriver.Chrome, webdriver.Edge, webdriver.Firefox, webdriver.Safari]
 
 DRIVER_NAME_TO_CLASS = {
     'Chrome': webdriver.Chrome,
@@ -34,6 +33,27 @@ DRIVER_NAME_TO_CLASS = {
 }  # type: Dict[str, Driver]
 
 
+def yandex_init(driver: Driver):
+    """ Accepts terms conditions. Disables Safe search. """
+
+    driver.get(YandexImagesDownloader.MAIN_URL)
+
+    time.sleep(1)
+    els = driver.find_elements_by_css_selector("button.sc-pNWxx.sc-jrsJCI.dryRrI.emsrNO")
+    # els = driver.find_elements_by_css_selector("button.emsrNO")
+    for el in els:
+        print(colored("Accepting terms conditions.", 'cyan'))
+        el.click()
+
+    print(colored("Disabling Safe search.", 'cyan'))
+    time.sleep(1)
+    el_combo = driver.find_element_by_css_selector("button.button2.button2_theme_clear.button2_size_s.button2_view_classic.dropdown-menu__switcher.i-bem.button2_js_inited")
+    el_combo.click()
+    time.sleep(1)
+    el_security_levels = driver.find_elements_by_css_selector("a.link.link_theme_normal.b-menu-vert__text.head-filter__item.i-bem")
+    el_security_levels[0].click()
+
+
 def get_driver(name: str = "Chrome") -> Driver:
     # driver_class = DRIVER_NAME_TO_CLASS[name]
     # args = {'executable_path': path} if path else {}
@@ -41,22 +61,7 @@ def get_driver(name: str = "Chrome") -> Driver:
     # driver = driver_class()
 
     driver = DRIVER_NAME_TO_CLASS[name]()
-
-    driver.get(YandexImagesDownloader.MAIN_URL)
-
-    # Odkliknout "Accept"
-    els = driver.find_elements_by_css_selector("button.sc-pNWxx.sc-jrsJCI.dryRrI.emsrNO")
-    # els = driver.find_elements_by_css_selector("button.emsrNO")
-    for el in els:
-        print("Element Accept", el.text)
-        el.click()
-
-    # Rozbalit combo security level
-    el_combo = driver.find_element_by_css_selector("button.button2.button2_theme_clear.button2_size_s.button2_view_classic.dropdown-menu__switcher.i-bem.button2_js_inited")
-    el_combo.click()
-    # Zvolit "Unsecure" (prvni varianta)
-    el_security_levels = driver.find_elements_by_css_selector("a.link.link_theme_normal.b-menu-vert__text.head-filter__item.i-bem")
-    el_security_levels[0].click()
+    yandex_init(driver)
 
     return driver
 
@@ -520,6 +525,7 @@ class YandexImagesDownloader:
             print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
             try:
+                yandex_init(self.driver)
                 keyword_result = self.download_images_by_keyword(
                     keyword,
                     sub_directory=sub_directory,
