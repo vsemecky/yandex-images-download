@@ -17,7 +17,10 @@ threads = 32  # Number of threads for downloading (not scraping)
 
 
 def scrap(args):
-    output_dir = os.getcwd() + "/" + os.path.splitext(args.project)[0] + "/dataset"
+    project_name = os.path.splitext(args.project)[0]
+    print(f"project_name: '{project_name}'")
+    output_dir = os.getcwd() + "/" + project_name
+    os.makedirs(output_dir, exist_ok=True)
     print(f"Output dir: '{output_dir}'")
 
     # Read YAML configuration for the dataset
