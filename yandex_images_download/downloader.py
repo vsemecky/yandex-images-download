@@ -357,9 +357,7 @@ class YandexImagesDownloader:
                                  errors_count=None,
                                  img_url_results=[])
 
-        self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL,
-                                   params=self.get_url_params(page, keyword))
-
+        # self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL, params=self.get_url_params(page, keyword))
         response = self.get_response()
 
         if not response or response.status_code != 200:
