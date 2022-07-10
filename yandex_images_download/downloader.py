@@ -520,7 +520,7 @@ class YandexImagesDownloader:
                 print(f"Sub-directory too long: {colored(sub_directory, 'cyan')}")
                 continue
 
-            print(f"{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
+            print(f"\n{keywords_counter}/{keywords_count} Downloading images for {keyword}...")
 
             try:
                 yandex_init(self.driver)
@@ -530,7 +530,8 @@ class YandexImagesDownloader:
                     label_prefix=f"{keywords_counter}/{keywords_count}"  # Pass counter info for printing progress
                 )
                 dowloader_result.keyword_results.append(keyword_result)
-            except:
+            except Exception as e:
+                print(colored("Error:", 'red'), type(e), e)
                 continue
 
             print(keyword_result.message)
