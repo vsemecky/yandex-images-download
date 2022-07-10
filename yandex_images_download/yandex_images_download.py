@@ -95,7 +95,7 @@ def scrap(args):
     print(f"Total errors: {total_errors}")
     print(f"Total files downloaded: {len(keywords) * project['limit'] - total_errors}")
     print(f"Total time taken: {total_time} seconds.")
-    save_json(f"{output_dir}/../yandex.json", downloader_result)
+    save_json(f"{output_dir}/../{project_name}.json", downloader_result)
     # @todo Tady to zapsat znova a tentokrát do turbo.txt souboru a jenom URL, která se úspěšně povedla (nebo jsou EXIST), ale ne faily, a ne negative.
 
 
