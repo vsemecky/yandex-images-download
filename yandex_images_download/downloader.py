@@ -362,7 +362,7 @@ class YandexImagesDownloader:
 
         response = self.get_response()
 
-        if not response or not (response.reason == "OK"):
+        if not response or response.status_code != 200:
             page_result.status = "fail"
             page_result.message = (f"Page response is not ok."
                                    f" page: {page},",
@@ -444,7 +444,7 @@ class YandexImagesDownloader:
         self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL, params=params)
         response = self.get_response()
 
-        if not response or not (response.reason == "OK"):
+        if not response or response.status_code != 200:
             keyword_result.status = "fail"
             keyword_result.message = (
                 "Failed to fetch a search page."
